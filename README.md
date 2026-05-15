@@ -16,6 +16,10 @@
 
 	phoneNo.replace(/ /gi, "").replace(/-/gi, "") - 공백, 하이픈 제거
 
+
+
+	
+
 	//숫자로만 적었을시 화면에 하이픈 보이게하는방법
 	if(num.length == 10) {
                 formatNum = num.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
