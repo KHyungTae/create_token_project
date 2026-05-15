@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>main Page</title>
+<link rel="stylesheet" href="/css/common.css">
+<script src="/js/jquery-3.2.1.min.js"></script>
+<style>
+	.hidden { display: none; }
+</style>
+</head>
+<body>
+	<div class="container">
+	    <h1 class="title">Main Page!</h1>
+	    
+	    <!-- 1. 로그인하지 않은 사용자에게 보일 내용 -->
+	    <div id="guestMode" class="hidden">
+	    	<div class="info-box">
+	    		<p>로그인이 필요합니다.</p>
+	    	</div>
+	    	<div class="btn-area">
+	    		<a href="/login"><button type="button" class="btn btn-primary">로그인 하러 가기</button></a>
+	        	<a href="/join"><button type="button" class="btn btn-primary">회원가입 하러 가기</button></a>
+	    	</div>
+	    </div>
+	
+	    <!-- 2. 로그인 성공한 사용자에게만 보일 내용 -->
+	    <div id="userMode">
+	        <div class="info-box">
+	        	<!-- [추가] 타이머 표시 영역 -->
+		        <p>로그인 유지 시간: <span id="timer" class="timer">00:10</span></p>
+	        </div>
+	        <div class="info-box">
+	            <h3 id="welcomeMsg"></h3>
+	            <p id="serverInfo"></p>
+	        </div>
+	        <div class="btn-area">
+	        	<button type="button" id="extendBtn" class="btn btn-primary">로그인 연장</button>
+	        	<button type="button" id="logoutBtn" class="btn btn-secondary">로그아웃</button>
+	        </div>
+	    </div>
+    </div>
+</body>
+<script>
+	//let timeLeft = 3600; //1시간
+	let timeLeft = 10; //10초
+	let timerInterval;
+
+	$(document).ready(function() {
+		
+		checkLoginStatus();
+		
+		//로그인 연장 버튼 클릭
+		$('#extendBtn').on("click", function() {
+			handleTokenRefresh(false); // 토큰 재발급 요청(수동 로그인 연장)
+		});
+		
+		// 로그아웃 버튼 클릭 이벤트
+        $('#logoutBtn').on("click", function() {            
+            logout();
+        });
+	});
+	
+	//로그인 유효시간
+	function startTimer() {
+		//기존 타이머가 있다면 초기화
+		if(timerInterval) {
+			clearInterval(timerInterval);	
+		}
+		timeLeft = 10; //시간 리셋
+		
+		timerInterval = setInterval(function() {
+			timeLeft--;
+			
+			//분:초 계산
+			let min = Math.floor(timeLeft / 60);
+			let sec = timeLeft % 60;
+			$('#timer').text(`${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`);
+			
+			if(timeLeft <= 0) {
+				clearInterval(timerInterval);
+				//alert("로그인 시간이 만료되어 자동으로 토큰 연장을 시도합니다.");
+				handleTokenRefresh(true); //토큰 재발급 요청(자동 로그인 연장)은 알럿없이 조용히 연장
+			}
+		}, 1000);
+	}
+	
+	//로그인시 로그인 유지 체크
+	function checkLoginStatus() {
+		let accessToken = localStorage.getItem("accessToken");
+		
+		//토큰 검사
+		if(!accessToken) {
+			$('#guestMode').removeClass('hidden').show();
+			$('#userMode').hide();
+			return;
+		}
+		
+		$.ajax({
+			type: 'POST',
+			url: '/api/main',
+			headers: {
+				/*
+				Bearer 라는 문구는 다른 개발자가 코드를 봐도 이건 토큰 인증방식이라는 약속
+				소지자, 운반자라는 뜻을 가짐
+				이 토큰을 가지고 있는 사람(Bearer)은 로그인된 사용자이므로 접근은 허용하라는 의미
+				*/
+				"Authorization": "Bearer " + accessToken
+			},
+			success: function(res) {
+				// 서버가 준 데이터로 화면 채우기
+                $('#welcomeMsg').text(res.userName + "님 환영합니다!");
+                
+                // 화면 모드 전환
+                $('#guestMode').hide();
+                $('#userMode').show();
+                
+                //성공 시 타이머 시작(한 번만 실행되도록 제어 필요)
+                if(!timerInterval) {
+                	startTimer();
+                }
+			},
+			error: function(xhr) {
+				// 토큰이 만료되었거나 잘못된 경우
+                if (xhr.status === 401) {
+                	handleTokenRefresh(true);
+                } else {
+                    alert("오류가 발생했습니다. 상태코드: " + xhr.status);
+                }
+			}
+		});
+	}
+	
+	//로그인 중 토큰 수동/자동 연장 (isAuto true면 자동 / false면 수동)
+	function handleTokenRefresh(isAuto) {
+		let accessToken = localStorage.getItem("accessToken"); //만료된 토큰
+		let refreshToken = localStorage.getItem("refreshToken"); //재발급시 필요 토큰
+		
+		if(!refreshToken) {
+			logout();
+			return;
+		}
+		
+		//새 Access Token 요청
+		$.ajax({
+			type: 'POST',
+			url: '/api/member/refresh',
+			contentType: 'application/json; charset=utf-8',
+			data: JSON.stringify({
+				accessToken : accessToken, //만료된 토큰
+				refreshToken : refreshToken //재발급시 필요 토큰
+			}),
+			success: function(res) {
+				// 새 토큰으로 교체하고 원래 하려던 작업 재시도 (또는 페이지 새로고침)
+				localStorage.setItem("accessToken", res.accessToken); //새 토큰
+				if(isAuto == false) {
+					alert("로그인 시간이 연장되었습니다.");	
+				}
+				
+				// 기존에 돌던 타이머 잔상을 메모리에서 완벽히 지우고 완전히 새로 시작
+				if(timerInterval) {
+					clearInterval(timerInterval);
+				}
+				timerInterval = null;
+				
+				startTimer(); //타이머 다시 1시간으로 리셋
+				//location.reload();
+			},
+			error: function() {
+				alert("세션이 만료되었습니다. 다시 로그인하세요.");
+				logout();
+			}
+		});
+	}
+	
+	//로그아웃
+	function logout() {
+		localStorage.removeItem("accessToken"); //accessToken토큰 삭제
+        localStorage.removeItem("refreshToken"); //refreshToken토큰 삭제
+        location.href = "/login"; // 로그인 페이지로 이동
+	}
+</script>
+</html>

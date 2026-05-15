@@ -1,0 +1,163 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+	background-color: #f5f6f8;
+	font-family: 'Malgun Gothic', sans-serif;
+	color: #333;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+}
+
+.container { width: 100%; max-width: 520px; padding: 30px; }
+
+.title {
+	text-align: center;
+	margin-bottom: 30px;
+	color: #222;
+	font-size: 32px;
+	font-weight: 600;
+}
+
+.form-box,
+.info-box {
+	border: 2px solid #d6d9df;
+	border-radius: 16px;
+	overflow: hidden;
+	margin-bottom: 28px;
+	background-color: #fff;
+}
+
+.form-group { position: relative; border-bottom: 2px solid #e3e5e9; }
+.form-group:last-child { border-bottom: none; }
+.form-group input {
+	width: 100%;
+	height: 74px;
+	border: none;
+	outline: none;
+	background-color: #fff;
+	color: #222;
+	font-size: 23px;
+	padding: 0 74px 0 74px;
+}
+.form-group input::placeholder { color: #999; }
+
+/* 에러 발생 시 특정 인풋칸의 아이콘이나 텍스트 강조용 (선택 사항) */
+.form-group.border-error { border: 2px solid #ff3f3f !important; }
+.form-group.border-error input { color: #ff3f3f !important; }
+.form-group.border-error input::placeholder { color: #ffb3b3 !important; }
+
+.form-group.focus-success:focus-within {
+	border: 2px solid #17a957 !important;
+	position: relative;
+	z-index: 1;
+}
+
+* 첫 번째 칸과 마지막 칸 포커스 시 부모 라운딩(#form-box) 밖으로 튀어나가지 않도록 제어 */
+.form-box .form-group:first-child.focus-success:focus-within { 
+	border-top-left-radius: 14px;
+	border-top-right-radius: 14px;
+}
+.form-box .form-group:last-child.focus-success:focus-within {
+	border-bottom-left-radius: 14px;
+	border-bottom-right-radius: 14px;
+}
+
+/* 포커스 되었을 때 글자 및 플레이스홀더 색상 제어 */
+.form-group.focus-success:focus-within input { color: #17a957 !important; }
+.form-group.focus-success:focus-within input::placeholder { color: #a9e3bf !important; }
+
+.form-box 
+
+.input-icon {
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    /* 인풋 창을 클릭할 때 아이콘이 가려서 클릭 안 되는 현상 방지 */
+    pointer-events: none; 
+}
+
+/* 각 아이콘별 이미지 매칭 */
+.user-icon { background-image: url('/images/user50.png'); }
+.lock-icon { background-image: url('/images/lock50.png'); }
+.email-icon { background-image: url('/images/mail50.png'); }
+.phone-icon { background-image: url('/images/phone64.png'); }
+
+.btn-area { display: flex; flex-direction: column; gap: 14px;  margin-top: 24px; }
+.btn {
+	width: 100%;
+	height:58px;
+	border-radius: 12px;
+	border: 2px solid #d6d9df;
+	background-color: #fff;
+	color: #333;
+	font-size: 19px;
+	font-weight: bold;
+	cursor: pointer;
+}
+.btn-primary { border-color: #35c46b; color: #17a957; }
+.btn-primary:hover { background-color: #effbf4; }
+.btn-secondary:hover { background-color: #f0f1f3; }
+.btn-small { font-size: 15px; }
+.btn:disabled,
+.btn[disabled] {
+    background-color: #f4f5f7 !important; /* 배경을 연한 회색으로 변경 */
+    color: #999999 !important;            /* 글자색을 흐릿한 회색으로 변경 */
+    border-color: #d6d9df !important;     /* 테두리 고정 */
+    cursor: not-allowed !important;       /* 마우스 커서를 금지(🚫) 모양으로 변경 */
+    pointer-events: none !important;      /* 마우스 클릭 이벤트 자체를 완전히 차단 */
+}
+
+.info-box { padding: 24px; font-size: 21px; line-height: 1.6; }
+.timer { color: #FF0000; font-weight: bold; }
+.link-area { margin-top: 26px; text-align: center; font-size: 17px; color: #777; }
+.link-area a { margin-left: 8px; color: #17a957; text-decoration: none; font-weight: bold; }
+.link-area a:hover { text-decoration: underline; }
+.hidden { display: none; }
+
+/* 밖으로 나온 메시지 박스 스타일 정렬 */
+.msg-box {
+	font-size: 13px;
+	line-height: 1.6;
+	margin-bottom: 6px;
+	text-align: left;
+	padding-left: 10px;
+}
+.msg-box.error { color: #ff3f3f; }
+.msg-box.success { color: #17a957; }
+
+/* 도트(•) 기호 자동 매칭 */
+.msg-box.error::before { content: "• "; font-weight: bold; }
+.msg-box.success::before { content: "✓ "; font-weight: bold; }
+
+
+/* ========================================================
+   자동완성 스타일 고정 (아이콘이 분리되었으므로 배경색만 고정)
+   ======================================================== */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover, 
+.form-group input:-webkit-autofill:focus, 
+.form-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 74px #fff inset !important;
+    -webkit-text-fill-color: #222 !important;
+}
+
+/* 2. 애니메이션 트릭을 이용한 글자 크기(23px) 강제 고정 */
+@keyframes autofillFontSize {
+    to { 
+        font-size: 23px !important; 
+        font-family: 'Malgun Gothic', sans-serif !important;
+    }
+}
+
+.form-group input:-webkit-autofill {
+    animation-name: autofillFontSize;
+    animation-fill-mode: forwards;
+}

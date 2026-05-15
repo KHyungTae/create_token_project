@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="/js/jquery-3.2.1.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2 class="title">회원가입</h2>
+        <div class="form-box">
+	        <div class="form-group" id="idGroup">
+	        	<span class="input-icon user-icon"></span>
+            	<input type="text" id="userId" name="userId" placeholder="아이디" autocomplete="one-time-code" />
+	        </div>
+	        
+	        <div class="form-group" id="pwGroup">
+	        	<span class="input-icon lock-icon"></span>
+	            <input type="password" id="password" name="password" placeholder="비밀번호" autocomplete="new-password" />
+	        </div>
+	        
+	        <div class="form-group" id="emailGroup">
+	        	<span class="input-icon email-icon"></span>
+	            <input type="email" id="email" name="email" placeholder="이메일" autocomplete="one-time-code" />
+	        </div>
+	        
+	        <div class="form-group" id="nameGroup">
+	        	<span class="input-icon user-icon"></span>
+	            <input type="text" id="userName" name="userName" placeholder="이름" autocomplete="one-time-code" />
+	        </div>
+	        
+	        <div class="form-group" id="phoneGroup">
+	        	<span class="input-icon phone-icon"></span>
+	            <input type="tel" id="tel" name="tel" placeholder="휴대전화번호" autocomplete="one-time-code" />
+	        </div>
+	    </div>
+	    <div class="error-summary-area" style="margin: 16px 0 10px 0;">
+		    <div class="msg-box" id="idMsg" style="display: none"></div>
+	        <div class="msg-box" id="pwMsg" style="display: none"></div>
+	        <div class="msg-box" id="emailMsg" style="display: none"></div>
+	        <div class="msg-box" id="phoneMsg" style="display: none"></div>
+	    </div>
+        
+        <div class="btn-area">
+        	<button type="button" id="joinBtn" class="btn btn-primary" disabled>가입 완료</button>
+        	<button type="button" id="mainBtn" class="btn btn-secondary">메인페이지 이동</button>
+        </div>
+	    
+		<div class="link-area">
+			<span>이미 계정이 있으신가요?</span>
+			<a href="/login">로그인</a>
+		</div>
+    </div>
+</body>
+<script>
+	//가입완료 버튼 활성 비활성 전역 변수
+	let validationStatus = {
+			userId: false,
+			password: false/*,
+			email: false,
+			username: false,
+			tel: false*/
+	};
+
+	$(document).ready(function() {
+		
+		$('#userId').on("blur", function() {
+			let userId = $(this).val(); //this이벤트 기능의 userId 값
+			if(!userId) {
+				userId = "";
+			}else {
+				userId = userId.trim();
+			}
+			
+			let $group = $('#idGroup'); //idGroup태그
+			let $msg = $('#idMsg'); //idMsg태그
+			//정규 표현식: 첫글자는 영문소문자,숫자 + 나머지글자는 영문소문자,밑줄(_),붙임표(-) + 5~20자사이
+			let idReg = /^[a-z0-9][a-z0-9_\-]{4,19}$/;
+			
+			//검증
+			if(idValidation(userId, $group, $msg, idReg) === false) {
+				return;
+			}
+			
+			let checkData = {
+					"userId": userId.toLowerCase()
+			};
+			
+			$.ajax({
+				type: 'POST',
+				url: '/api/member/dupIdCheck',
+				contentType: 'application/json; charset=utf-8',
+				data: JSON.stringify(checkData),
+				success: function() {
+					updateValidationUI($group, $msg, "사용 가능한 아이디입니다.", "success");
+					validationStatus.userId = true;
+					checkJoinButtonValidity();
+				},
+				error: function(xhr) {
+					let errorMsg = xhr.responseText;
+					updateValidationUI($group, $msg, errorMsg, "error");
+					validationStatus.userId = false;
+					checkJoinButtonValidity();
+				}
+			});
+		});
+		
+		
+		$('#password').on("blur", function() {
+			let password = $(this).val().trim(); //this이벤트 기능의 password 값
+			let $group = $('#pwGroup');
+			let $msg = $('#pwMsg');
+			//정규 표현식: 
+			let pwReg = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=-]).{8,16}$/;
+			
+			if(pwValidation(password, $group, $msg, pwReg) === false) {
+				return;
+			}
+		});
+		
+		
+		/*$('#email').on("blur", function() {
+			let email = $(this).val().trim();
+			let $group = $('#emailGroup');
+			let $msg = $('#emailMsg');
+			let email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+			
+			if(emailValidation(email, $group, $msg, emailReg) === false) {
+				return;
+			}
+		});*/
+		
+		
+		$('#mainBtn').on("click", function() {
+			location.href = "/main"; 
+		});
+	});
+	
+	//아이디 검증
+	function idValidation(userId, $group, $msg, idReg) {
+		
+		if(!userId) {
+			updateValidationUI($group, $msg, "아이디: 필수 입력 항목입니다.", "error");
+			validationStatus.userId = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		if(!idReg.test(userId)) {
+			updateValidationUI($group, $msg, "아이디: 5~20자의 영문 소문자, 숫자와 특수기호(_),(-)만 사용 가능합니다.", "error");
+			validationStatus.userId = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		return true;
+	}
+	
+	function pwValidation(password, $group, $msg, pwReg) {
+		
+		if(!password) {
+			updateValidationUI($group, $msg, "비밀번호: 필수 입력 항목입니다.", "error");
+			validationStatus.password = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		if(!pwReg.test(password)) {
+			updateValidationUI($group, $msg, "비밀번호: 8~16자의 영문 대/소문자, 숫자, 특수문자를 사용해 주세요.", "error");
+			validationStatus.password = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		updateValidationUI($group, $msg, "사용 가능한 비밀번호입니다.", "success");
+		validationStatus.password = true;
+		checkJoinButtonValidity();		
+		return true;
+	}
+	
+	/*function emailValidation(email, $group, $msg, emailReg) {
+		if(!email) {
+			updateValidationUI($group, $msg, "", "error");
+			validationStatius.email = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+	}*/
+	
+	
+	//입력창 테두리와 하단 메시지를 동시에 제어하는 함수
+	function updateValidationUI($group, $msg, message, status) {
+		if(status === "error") {
+			//$group.removeClass("border-success").addClass("border-error");
+			$group.removeClass("border-success focus-success").addClass("border-error");
+			$msg.text(message).removeClass("success").addClass("error").show();
+		}else {
+			$group.removeClass("border-error border-success").addClass("focus-success");
+			//$msg.text(message).removeClass("error").addClass("success").show();
+			$msg.text("").removeClass("error").addClass("success").hide();
+		}
+	}
+	
+	//가입완료 활성 비활성화 상태를 제어
+	function checkJoinButtonValidity() {
+		//let isValid = validationStatus.userId && validationStatus.password && 
+                      //validationStatus.email && validationStatus.userName && validationStatus.tel;
+		let isValid = validationStatus.userId && validationStatus.password;
+		/* isValid가 모두 true면 !isValid(=false)활성화
+		   isvalid가 모두 false면 !isValid(=true)비활성화 */
+		$('#joinBtn').prop("disabled", !isValid);
+	}
+</script>
+</html>

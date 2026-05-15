@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Login Page</title>
+	<link rel="stylesheet" href="/css/common.css">
+	<script src="/js/jquery-3.2.1.min.js"></script>
+</head>
+<body>
+	<div class="container">
+	    <h2 class="title">로그인</h2>
+    	<div class="form-box">
+	    	<div class="form-group">
+	    		<span class="input-icon user-icon"></span>
+		        <input type="text" id="userId" name="userId" placeholder="아이디" autocomplete="one-time-code" />
+	    	</div>
+	    	
+	    	<div class="form-group">
+	    		<span class="input-icon lock-icon"></span>
+		        <input type="password" id="password" name="password" placeholder="비밀번호" autocomplete="new-password" />
+	    	</div>
+		</div>
+    	<div class="btn-area">
+    		<button type="button" id="loginBtn" class="btn btn-primary">로그인</button>
+    		<button type="button" id="mainBtn" class="btn btn-secondary">메인페이지 이동</button>
+    	</div>
+	    <div class="link-area">
+	    	<span>아직 계정이 없으신가요?</span>
+	    	<a href="/join">회원가입</a>
+	    </div>
+	</div>
+</body>
+
+<script>
+	$(document).ready(function() {
+		//로그인 버튼 클릭 이벤트
+		$('#loginBtn').on("click", function() {
+			
+			let loginData = {
+				userId : $('#userId').val().trim().toLowerCase(),
+				password : $('#password').val()
+			}
+			
+			//유효성 검사
+			if(!loginData.userId || !loginData.password) {
+				alert("아이디와 비밀번호를 모두 입력해주세요.");
+				return;
+			}
+			
+			//ajax json통신
+			$.ajax({
+				type: 'POST',
+				url: '/api/member/login',
+				contentType: 'application/json; charset=utf-8', //서버에 json을 보낸다고 명시
+				data: JSON.stringify(loginData), //객체에 맞게 json 문자열로 변환
+				success: function(response) {
+					//서버에서 성공응답
+					localStorage.setItem("accessToken", response.accessToken);
+					localStorage.setItem("refreshToken", response.refreshToken);
+					alert(response.message);
+					location.href = "/main";
+					
+				},
+				error: function(xhr) {
+					alert("로그인 실패: " + xhr.responseText);
+					location.href = "/login";
+				}
+			});
+		});
+		
+		$('#mainBtn').on("click", function() {
+			location.href = "/main";
+		});
+	});
+</script>
+
+</html>
