@@ -53,11 +53,11 @@
 				url: '/api/member/login',
 				contentType: 'application/json; charset=utf-8', //서버에 json을 보낸다고 명시
 				data: JSON.stringify(loginData), //객체에 맞게 json 문자열로 변환
-				success: function(response) {
+				success: function(res) {
 					//서버에서 성공응답
-					localStorage.setItem("accessToken", response.accessToken);
-					localStorage.setItem("refreshToken", response.refreshToken);
-					alert(response.message);
+					localStorage.setItem("accessToken", res.accessToken);
+					localStorage.setItem("refreshToken", res.refreshToken);
+					alert(res.message);
 					location.href = "/main";
 					
 				},
