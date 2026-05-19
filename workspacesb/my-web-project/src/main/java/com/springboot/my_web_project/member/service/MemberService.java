@@ -91,6 +91,14 @@ public class MemberService {
 	public boolean isIdDuplicated(String userId) {
 		return memberRepository.existsById(userId);
 	}
-	
+
+	//회원가입
+	public void join(Member member) {
+		//비밀번호 암호화
+		String encodePassword = encoder.encode(member.getPassword());
+		member.setPassword(encodePassword);
+		
+		memberRepository.save(member);
+	}
 	
 }
