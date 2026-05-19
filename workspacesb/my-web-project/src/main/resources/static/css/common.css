@@ -88,7 +88,7 @@ body {
 .user-icon { background-image: url('/images/user50.png'); }
 .lock-icon { background-image: url('/images/lock50.png'); }
 .email-icon { background-image: url('/images/mail50.png'); }
-.phone-icon { background-image: url('/images/phone64.png'); }
+.tel-icon { background-image: url('/images/phone64.png'); }
 
 .btn-area { display: flex; flex-direction: column; gap: 14px;  margin-top: 24px; }
 .btn {
