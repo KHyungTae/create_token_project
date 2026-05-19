@@ -30,8 +30,8 @@
 	            <input type="text" id="userName" name="userName" placeholder="이름" autocomplete="one-time-code" />
 	        </div>
 	        
-	        <div class="form-group" id="phoneGroup">
-	        	<span class="input-icon phone-icon"></span>
+	        <div class="form-group" id="telGroup">
+	        	<span class="input-icon tel-icon"></span>
 	            <input type="tel" id="tel" name="tel" placeholder="휴대전화번호" autocomplete="one-time-code" />
 	        </div>
 	    </div>
@@ -39,7 +39,8 @@
 		    <div class="msg-box" id="idMsg" style="display: none"></div>
 	        <div class="msg-box" id="pwMsg" style="display: none"></div>
 	        <div class="msg-box" id="emailMsg" style="display: none"></div>
-	        <div class="msg-box" id="phoneMsg" style="display: none"></div>
+	        <div class="msg-box" id="nameMsg" style="display: none"></div>
+	        <div class="msg-box" id="telMsg" style="display: none"></div>
 	    </div>
         
         <div class="btn-area">
@@ -57,10 +58,10 @@
 	//가입완료 버튼 활성 비활성 전역 변수
 	let validationStatus = {
 			userId: false,
-			password: false/*,
+			password: false,
 			email: false,
-			username: false,
-			tel: false*/
+			userName: false,
+			tel: false
 	};
 
 	$(document).ready(function() {
@@ -106,31 +107,104 @@
 			});
 		});
 		
-		
+		//패스워드
 		$('#password').on("blur", function() {
 			let password = $(this).val().trim(); //this이벤트 기능의 password 값
 			let $group = $('#pwGroup');
 			let $msg = $('#pwMsg');
 			//정규 표현식: 
-			let pwReg = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=-]).{8,16}$/;
+			let pwReg = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=-])(?=\S+$).{8,16}$/;
 			
 			if(pwValidation(password, $group, $msg, pwReg) === false) {
 				return;
 			}
 		});
 		
-		
-		/*$('#email').on("blur", function() {
+		//이메일
+		$('#email').on("blur", function() {
 			let email = $(this).val().trim();
 			let $group = $('#emailGroup');
 			let $msg = $('#emailMsg');
-			let email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+			let emailReg = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 			
 			if(emailValidation(email, $group, $msg, emailReg) === false) {
 				return;
 			}
-		});*/
+		});
 		
+		//이름
+		$('#userName').on("blur", function() {
+			let userName = $(this).val();
+			
+			let $group = $('#nameGroup');
+			let $msg = $('#nameMsg');
+			let nameReg = /[^가-힣a-zA-Z0-9]/gi; //한글, 영문(대/소), 숫자만
+			
+			if(nameValidation(userName, $group, $msg, nameReg) === false) {
+				return;
+			}
+		});
+		
+		//휴대전화
+		const $group = $('#telGroup');
+		const $msg = $('#telMsg');
+		const telReg = /^((01[1|6|7|8|9])[1-9][0-9]{6,7})$|(010[1-9][0-9]{7})$/;
+		$('#tel').on("input blur", function(e) {
+			let $this = $(this);
+			let rawVal = $this.val().replace(/[^0-9]/g, "");
+			
+			if(e.type === "input") {
+				let formattedVal = "";
+				if(rawVal.length < 4) {
+					formattedVal = rawVal;
+				}else if(rawVal.length < 8) {
+					formattedVal = rawVal.replace(/(\d{3})(\d{1,4})/, '$1-$2');
+				}else if (rawVal.length < 11) {
+				    formattedVal = rawVal.replace(/(\d{3})(\d{3})(\d{1,4})/, '$1-$2-$3');
+				}else {
+				    formattedVal = rawVal.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+				}
+				$this.val(formattedVal);
+				
+				if(rawVal.length === 11) {
+					if(telValidation(rawVal, $group, $msg, telReg) === false) {
+						return;	
+					}
+				}
+			}
+			if(e.type === "blur") {
+				if(telValidation(rawVal, $group, $msg, telReg) === false) {
+					return;	
+				}
+			}
+			
+		});
+		
+		//회원가입
+		$('#joinBtn').on("click", function() {
+			let joinData = {
+					userId: $('#userId').val().trim().toLowerCase(),
+					password: $('#password').val(),
+					email: $('#email').val().trim(),
+					userName: $('#userName').val().trim(),
+					tel: $('#tel').val().replace(/[^0-9]/g, "")
+			}
+			
+			$.ajax({
+				type: 'POST',
+				url: '/api/member/join',
+				contentType: 'application/json; charset=utf-8',
+				data: JSON.stringify(joinData),
+				success: function(res) {
+					alert(res);
+					location.href = "/login";
+				},
+				error: function(xhr) {
+					alert("가입 실패: " + xhr.responseText);
+					location.href = "/join";
+				}
+			});
+		});
 		
 		$('#mainBtn').on("click", function() {
 			location.href = "/main"; 
@@ -157,6 +231,7 @@
 		return true;
 	}
 	
+	//비밀번호 검증
 	function pwValidation(password, $group, $msg, pwReg) {
 		
 		if(!password) {
@@ -179,15 +254,71 @@
 		return true;
 	}
 	
-	/*function emailValidation(email, $group, $msg, emailReg) {
+	//이메일 검증
+	function emailValidation(email, $group, $msg, emailReg) {
 		if(!email) {
-			updateValidationUI($group, $msg, "", "error");
-			validationStatius.email = false;
+			updateValidationUI($group, $msg, "이메일: 필수 입력 항목입니다.", "error");
+			validationStatus.email = false;
 			checkJoinButtonValidity();
 			return false;
 		}
-	}*/
+		
+		if(!emailReg.test(email)) {
+			updateValidationUI($group, $msg, "이메일: 이메일 주소가 정확한지 확인해 주세요.", "error");
+			validationStatus.email = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		updateValidationUI($group, $msg, "", "success");
+		validationStatus.email = true;
+		checkJoinButtonValidity();
+		return true;
+	}
 	
+	//이름 검증
+	function nameValidation(userName, $group, $msg, nameReg) {
+		if(!userName) {
+			updateValidationUI($group, $msg, "이름: 필수 입력 항목입니다.", "error");
+			validationStatus.userName = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		if(nameReg.test(userName)) {
+			updateValidationUI($group, $msg, "이름: 한글, 영문 대/소문자를 사용해 주세요. (특수기호, 공백 사용 불가)", "error");
+			validationStatus.userName = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		updateValidationUI($group, $msg, "", "success");
+		validationStatus.userName = true;
+		checkJoinButtonValidity();
+		return true;
+	}
+	
+	//핸드폰 검증
+	function telValidation(rawVal, $group, $msg, telReg) {
+		if(!rawVal) {
+			updateValidationUI($group, $msg, "휴대전화: 필수 입력 항목입니다.", "error");
+			validationStatus.tel = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		if(!telReg.test(rawVal)) {
+			updateValidationUI($group, $msg, "휴대전화: 휴대전화번호가 정확한지 확인해 주세요.", "error");
+			validationStatus.tel = false;
+			checkJoinButtonValidity();
+			return false;
+		}
+		
+		updateValidationUI($group, $msg, "", "success");
+		validationStatus.tel = true;
+		checkJoinButtonValidity();
+		return true;
+	}
 	
 	//입력창 테두리와 하단 메시지를 동시에 제어하는 함수
 	function updateValidationUI($group, $msg, message, status) {
@@ -204,9 +335,8 @@
 	
 	//가입완료 활성 비활성화 상태를 제어
 	function checkJoinButtonValidity() {
-		//let isValid = validationStatus.userId && validationStatus.password && 
-                      //validationStatus.email && validationStatus.userName && validationStatus.tel;
-		let isValid = validationStatus.userId && validationStatus.password;
+		let isValid = validationStatus.userId && validationStatus.password && 
+                      validationStatus.email && validationStatus.userName && validationStatus.tel;
 		/* isValid가 모두 true면 !isValid(=false)활성화
 		   isvalid가 모두 false면 !isValid(=true)비활성화 */
 		$('#joinBtn').prop("disabled", !isValid);
