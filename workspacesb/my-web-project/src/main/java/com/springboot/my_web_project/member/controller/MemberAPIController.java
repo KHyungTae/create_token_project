@@ -121,5 +121,32 @@ public class MemberAPIController {
 		//중복아니면 success
 		return ResponseEntity.ok().build();
 	}
+
+	//회원가입
+	@PostMapping("/api/member/join")
+	public ResponseEntity<?> joinApi(@RequestBody MemberVO memberVO) {
+		
+		//유효성 검사
+		if(memberVO.getUserId() == null || memberVO.getPassword() == null ||
+				memberVO.getEmail() == null || memberVO.getUserName() == null ||
+				memberVO.getTel() == null) {
+			return ResponseEntity.badRequest().body("필수 가입 정보가 누락되었습니다.");
+		}
+		
+		Member member = new Member();
+		member.setUserId(memberVO.getUserId().trim().toLowerCase());
+		member.setPassword(memberVO.getPassword());
+		member.setEmail(memberVO.getEmail().trim());
+		member.setUserName(memberVO.getUserName().trim());
+		member.setTel(memberVO.getTel().trim());
+		
+		try {
+			memberService.join(member);
+			return ResponseEntity.ok("회원가입이 완료되었습니다.");
+		} catch (Exception e) {
+			// TODO: handle exception
+			return ResponseEntity.status(500).body("서버 오류로 인해 가입에 실패했습니다.");
+		}
+	}
 	
 }
